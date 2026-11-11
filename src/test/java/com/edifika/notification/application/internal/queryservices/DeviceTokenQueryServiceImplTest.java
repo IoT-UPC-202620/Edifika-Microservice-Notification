@@ -41,7 +41,7 @@ class DeviceTokenQueryServiceImplTest {
         when(entity.getCreatedAt()).thenReturn(null);
         when(entity.getUpdatedAt()).thenReturn(null);
 
-        when(jpaDeviceTokenRepository.findByUserId(userId))
+        when(jpaDeviceTokenRepository.findFirstByUserIdOrderByIdDesc(userId))
                 .thenReturn(Optional.of(entity));
 
         // Act
@@ -55,7 +55,7 @@ class DeviceTokenQueryServiceImplTest {
         assertEquals("firebase-token-123", result.get().getToken());
 
         verify(jpaDeviceTokenRepository, times(1))
-                .findByUserId(userId);
+                .findFirstByUserIdOrderByIdDesc(userId);
     }
 
     @Test
@@ -63,7 +63,7 @@ class DeviceTokenQueryServiceImplTest {
         // Arrange
         Long userId = 99L;
 
-        when(jpaDeviceTokenRepository.findByUserId(userId))
+        when(jpaDeviceTokenRepository.findFirstByUserIdOrderByIdDesc(userId))
                 .thenReturn(Optional.empty());
 
         // Act
@@ -74,7 +74,7 @@ class DeviceTokenQueryServiceImplTest {
         assertTrue(result.isEmpty());
 
         verify(jpaDeviceTokenRepository, times(1))
-                .findByUserId(userId);
+                .findFirstByUserIdOrderByIdDesc(userId);
     }
 
     @Test

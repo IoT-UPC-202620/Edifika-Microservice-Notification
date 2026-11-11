@@ -83,4 +83,51 @@ class DeviceTokenCommandServiceImplTest {
         verify(jpaDeviceTokenRepository, times(1))
                 .save(any(DeviceTokenEntity.class));
     }
+
+    private static DeviceTokenEntity entity(Long id, Long userId, String token) {
+        DeviceTokenEntity entity = spy(new DeviceTokenEntity(userId, token));
+        lenient().when(entity.getId()).thenReturn(id);
+        return entity;
+    }
+
+    @Test
+    void registerTokenReplacesTheUsersPreviousToken() {
+        Long userId = 1L;
+        DeviceTokenEntity old = entity(10L, userId, "old-token");
+        when(jpaDeviceTokenRepository.findByToken("new-token")).thenReturn(java.util.Optional.empty());
+        when(jpaDeviceTokenRepository.findAllByUserId(userId)).thenReturn(java.util.List.of(old));
+        when(jpaDeviceTokenRepository.save(any(DeviceTokenEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        DeviceToken result = deviceTokenCommandService.registerToken(userId, "new-token");
+
+        assertEquals("new-token", result.getToken());
+        verify(jpaDeviceTokenRepository).deleteAll(java.util.List.of(old));
+    }
+
+    @Test
+    void registeringTheSameTokenAgainUpdatesInsteadOfInserting() {
+        Long userId = 1L;
+        DeviceTokenEntity existing = entity(10L, userId, "same-token");
+        when(jpaDeviceTokenRepository.findByToken("same-token")).thenReturn(java.util.Optional.of(existing));
+        when(jpaDeviceTokenRepository.findAllByUserId(userId)).thenReturn(java.util.List.of(existing));
+        when(jpaDeviceTokenRepository.save(existing)).thenReturn(existing);
+
+        deviceTokenCommandService.registerToken(userId, "same-token");
+
+        verify(jpaDeviceTokenRepository).save(existing);
+        verify(jpaDeviceTokenRepository, never()).deleteAll(any());
+    }
+
+    @Test
+    void aTokenUsedByAnotherUserIsReassigned() {
+        DeviceTokenEntity fromOtherUser = entity(10L, 2L, "shared-phone");
+        when(jpaDeviceTokenRepository.findByToken("shared-phone")).thenReturn(java.util.Optional.of(fromOtherUser));
+        when(jpaDeviceTokenRepository.findAllByUserId(1L)).thenReturn(java.util.List.of());
+        when(jpaDeviceTokenRepository.save(fromOtherUser)).thenReturn(fromOtherUser);
+
+        DeviceToken result = deviceTokenCommandService.registerToken(1L, "shared-phone");
+
+        assertEquals(1L, result.getUserId());
+        verify(jpaDeviceTokenRepository, never()).deleteAll(any());
+    }
 }

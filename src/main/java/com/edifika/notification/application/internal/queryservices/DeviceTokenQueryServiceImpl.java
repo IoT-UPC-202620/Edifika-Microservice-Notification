@@ -19,7 +19,8 @@ public class DeviceTokenQueryServiceImpl implements DeviceTokenQueryService {
 
     @Override
     public Optional<DeviceToken> getTokenByUserId(Long userId) {
-        return jpaDeviceTokenRepository.findByUserId(userId)
+        // El último registrado: tolera filas duplicadas creadas antes del upsert.
+        return jpaDeviceTokenRepository.findFirstByUserIdOrderByIdDesc(userId)
                 .map(this::mapToDomain);
     }
 
