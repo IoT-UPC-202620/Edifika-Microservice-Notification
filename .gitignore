@@ -34,3 +34,8 @@ build/
 
 ### Firebase — credenciales (NUNCA subir al repositorio) ###
 **/firebase/serviceAccountKey.json
+
+# Variables locales
+.env
+firebase-local-dummy.json
+serviceAccountKey.json
